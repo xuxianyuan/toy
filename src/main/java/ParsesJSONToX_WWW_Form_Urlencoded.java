@@ -22,7 +22,18 @@ public class ParsesJSONToX_WWW_Form_Urlencoded {
                 text.append(line.trim());
             }
             Map map = objectMapper.readValue(text.toString(), Map.class);
-            deepParses(map, "", bufferedWriter);
+            for (Object obj : map.entrySet()) {
+                Map.Entry entry = (Map.Entry) obj;
+                if (entry.getValue() instanceof List) {
+                    deepParses((List) entry.getValue(), entry.getKey().toString(), bufferedWriter);
+                } else if (entry.getValue() instanceof Map) {
+                    deepParses((Map) entry.getValue(), entry.getKey().toString(), bufferedWriter);
+                } else {
+                    bufferedWriter.write(String.valueOf(entry.getKey()) + ":" + String.valueOf(entry.getValue()) + "\r\n");
+                }
+            }
+            bufferedReader.close();
+            bufferedWriter.close();
             System.out.println("FINISH!");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -35,29 +46,11 @@ public class ParsesJSONToX_WWW_Form_Urlencoded {
         for (Object obj : map.entrySet()) {
             Map.Entry entry = (Map.Entry) obj;
             if (entry.getValue() instanceof List) {
-                if (!"".equals(prefix)) {
-                    deepParses((List) entry.getValue(), prefix + "[" + entry.getKey() + "]", bufferedWriter);
-                } else {
-                    deepParses((List) entry.getValue(), entry.getKey().toString(), bufferedWriter);
-
-                }
+                deepParses((List) entry.getValue(), prefix + "[" + entry.getKey() + "]", bufferedWriter);
             } else if (entry.getValue() instanceof Map) {
-                if (!"".equals(prefix)) {
-                    deepParses((Map) entry.getValue(), prefix + "[" + entry.getKey() + "]", bufferedWriter);
-                } else {
-                    deepParses((Map) entry.getValue(), entry.getKey().toString(), bufferedWriter);
-                }
+                deepParses((Map) entry.getValue(), prefix + "[" + entry.getKey() + "]", bufferedWriter);
             } else {
-                if ("".equals(prefix)) {
-                    bufferedWriter.write(String.valueOf(entry.getKey()));
-                } else {
-                    bufferedWriter.write(prefix);
-                    bufferedWriter.write("[" + String.valueOf(entry.getKey()) + "]");
-                }
-                bufferedWriter.write(":");
-                bufferedWriter.write(String.valueOf(entry.getValue()));
-                bufferedWriter.write("\r\n");
-                bufferedWriter.flush();
+                bufferedWriter.write(prefix + "[" + String.valueOf(entry.getKey()) + "]:" + String.valueOf(entry.getValue()) + "\r\n");
             }
         }
     }
@@ -70,12 +63,7 @@ public class ParsesJSONToX_WWW_Form_Urlencoded {
             } else if (obj instanceof Map) {
                 deepParses((Map) obj, prefix + "[" + count + "]", bufferedWriter);
             } else {
-                bufferedWriter.write(prefix);
-                bufferedWriter.write("[" + count + "]");
-                bufferedWriter.write(":");
-                bufferedWriter.write(obj.toString());
-                bufferedWriter.write("\r\n");
-                bufferedWriter.flush();
+                bufferedWriter.write(prefix + "[" + count + "]:" + obj + "\r\n");
             }
             count++;
         }
